@@ -560,6 +560,7 @@ class ot_better_together {
       $taxable_amount = $od_amount['total'];
       switch ($this->calculate_tax) {
          case 'Standard':
+            if (isset($order->info['tax_groups'])) {
             reset($order->info['tax_groups']);
             $taxGroups = array_keys($order->info['tax_groups']);
             foreach ($taxGroups as $key) {
@@ -569,9 +570,11 @@ class ot_better_together {
                   $od_amount['tax'] += $tod_amount;
                }
             }
+            }
             break;
 
          case 'VAT': // Really "vat" style for embedded tax
+            if (isset($order->info['tax_groups'])) {
             reset($order->info['tax_groups']);
             $taxGroups = array_keys($order->info['tax_groups']);
             foreach ($taxGroups as $key) {
@@ -580,6 +583,7 @@ class ot_better_together {
                   $od_amount[$key] = $tod_amount = $this->gross_down($taxable_amount);
                   $od_amount['tax'] += $tod_amount;
                }
+            }
             }
             break;
       }
