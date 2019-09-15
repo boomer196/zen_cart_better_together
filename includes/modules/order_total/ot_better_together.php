@@ -359,6 +359,71 @@ class ot_better_together {
    }
 
    /**
+    * Computes the discount for this item.  Modifies remaining items to disallow double dipping.
+    * @param $discount_item
+    * @param $all_items
+    * @return float|int - discounted amount.
+    */
+    function get_discount_one_to_many_2($discount_item, &$discountable_products, &$already_discounted_items = array()) {
+      $discount = 0;
+      for ($dis = 0, $r = count($this->discountlist); $dis < $r; $dis++) {
+        $li = $this->discountlist[$dis];
+
+        // Based on type, check ident1
+        if (($li->flavor == PROD_TO_PROD) || ($li->flavor == PROD_TO_CAT)) {
+           if ($li->ident1 != $discount_item['id']) {
+             continue;
+           }
+        } else { // CAT_TO_CAT, CAT_TO_PROD
+          if ($li->ident1 != $discount_item['category']) {
+            continue;
+          }
+        }
+
+        //see if we have either prod or cat that matches and apply discount (if cat_* skip yourself)
+        for ($x = 0, $y = sizeof($discountable_products); $x < $y; $x++) {
+          if ($discountable_products[$x]['id'] == $discount_item['id']) { // skip yourself
+            continue;
+          }
+
+          $match = 0;
+          if (($li->flavor == PROD_TO_PROD) || ($li->flavor == CAT_TO_PROD)) {
+            if ($discountable_products[$x]['id'] == $li->ident2) {
+              $match = 1;
+            }
+          } else { // CAT_TO_CAT, PROD_TO_CAT
+            if (in_array($discountable_products[$x]['id'], $already_discounted_items)) {
+              continue;
+            }
+            if ($discountable_products[$x]['category'] == $li->ident2) {
+              $match = 1;
+            }
+          }
+
+          if ($match == 1) {
+            $item_discountable = 0;
+            // If first time add yourself
+            if (empty($already_discounted_items)) {
+              array_push($already_discounted_items, $discount_item['id']);
+            }
+            array_push($already_discounted_items, $discountable_products[$x]['id']);
+            if ($li->type == "$") {
+              $item_discountable = $li->amt;
+            } else { // %
+              $item_discountable = $discountable_products[$x]['final_price'] * $li->amt / 100;
+            }
+            if ($this->include_tax == 'true') {
+              $discount += $this->gross_up($item_discountable);
+            } else {
+              $discount += $item_discountable;
+            }
+          }
+        }// end for (discountable_products)
+      }// end for (discountList)
+      return $discount;
+    }
+
+   /**
     * Determines if the item is eligible for a twofer discount.
     * @param $discount_item
     * @return bool
@@ -437,6 +502,7 @@ class ot_better_together {
          $discountable_products[$i] = $products[$i];
       }
 
+      $already_discounted_items = array();
       // Now compute discounts
       $discount = 0;
       $bt_one_to_many = MODULE_ORDER_TOTAL_BETTER_TOGETHER_ONE_TO_MANY; 
@@ -454,6 +520,9 @@ class ot_better_together {
             }
          }
 
+         if ($bt_one_to_many == 2) {
+            $discount += $this->get_discount_one_to_many_2($discountable_products[$i], $discountable_products, $already_discounted_items);
+          } else {
          // Otherwise, do regular bt processing
          $already_discounted_items = array(); 
          while ($discountable_products[$i]['quantity'] > 0) {
@@ -484,6 +553,7 @@ class ot_better_together {
                   }
                }
          }
+      }
       }
 
       $od_amount['total'] = round($discount, 2);
