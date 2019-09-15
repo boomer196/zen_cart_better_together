@@ -949,12 +949,12 @@ class ot_better_together {
                else {
                   $off_string = FREE_STRING;
                }
-               $disc_string .= $off_string;
+               $disc_string .= '<span class="discountOff">' . $off_string . '</span>';
             }
             else {
                $curr_string = $currencies->format($li->amt, true, $order->info['currency'], $order->info['currency_value']);
                $off_string = sprintf(OFF_STRING_CURR, $curr_string);
-               $disc_string .= $off_string;
+               $disc_string .= '<span class="discountOff">' . $off_string . '</span>';
             }
             if ($usearray) {
                $info['data'] = $disc_string;
@@ -1084,12 +1084,12 @@ class ot_better_together {
                else {
                   $off_string = FREE_STRING;
                }
-               $disc_string .= $off_string;
+               $disc_string .= '<span class="discountOff">' . $off_string . '</span>';
             }
             else {
                $curr_string = $currencies->format($li->amt, true, $order->info['currency'], $order->info['currency_value']);
                $off_string = sprintf(OFF_STRING_CURR, $curr_string);
-               $disc_string .= $off_string;
+               $disc_string .= '<span class="discountOff">' . $off_string . '</span>';
             }
             if ($usearray) {
                $info['data'] = $disc_string;
