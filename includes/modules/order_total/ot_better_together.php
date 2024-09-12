@@ -4,10 +4,10 @@
  * An order_total module
  * By Scott Wilson (swguy)
  * http://www.thatsoftwareguy.com
- * Version 2.6
+ * Version 2.7
  * URL: http://www.thatsoftwareguy.com/zencart_better_together.html
  *
- * @copyright Copyright 2006-2018, That Software Guy
+ * @copyright Copyright 2006-2022, That Software Guy
  * @copyright Portions Copyright 2004-2006 Zen Cart Team
  * @copyright Portions Copyright 2003 osCommerce
  * @license http://www.zen-cart.com/license/2_0.txt GNU Public License V2.0
@@ -48,12 +48,12 @@ define('TWOFER_CAT', '12');
  * Better Together discount class.  For discounts other than twofers.
  */
 class bt_discount {
-   var $ident1; // Product id or category
-   var $ident2; // Product id or category
-   var $type; // % or $ or X
-   var $amt; // numerical amount
-   var $flavor; // PROD_TO_PROD, PROD_TO_CAT, CAT_TO_CAT, CAT_TO_PROD
-   var $isvalid;
+   public $ident1; // Product id or category
+   public $ident2; // Product id or category
+   public $type; // % or $ or X
+   public $amt; // numerical amount
+   public $flavor; // PROD_TO_PROD, PROD_TO_CAT, CAT_TO_CAT, CAT_TO_PROD
+   public $isvalid;
 
    /**
     * Initialization function
@@ -89,10 +89,10 @@ class bt_discount {
  * Better Together twofer discount class
  */
 class bt_twofer {
-   var $ident1; // Product or category id
-   var $ident2; // Product or category id
-   var $flavor; // Can only be TWOFER_PROD or TWOFER_CAT
-   var $isvalid;
+   public $ident1; // Product or category id
+   public $ident2; // Product or category id
+   public $flavor; // Can only be TWOFER_PROD or TWOFER_CAT
+   public $isvalid;
 
    function init($ident1, $flavor) {
       $this->isvalid = 0;
@@ -112,7 +112,21 @@ class bt_twofer {
 }
 
 class ot_better_together {
-   var $title, $output;
+
+    protected $_check;
+    public $code;
+    public $calculate_tax;
+    public $credit_class;
+    protected $deduction;
+    public $description;
+    public $include_shipping;
+    public $include_tax;
+    public $sort_order;
+    public $tax_class;
+    public $title;
+    public $output = [];
+
+    protected $discountlist, $xselllist, $twoferlist, $nocontext; 
 
    function __construct() {
       $this->code = 'ot_better_together';
@@ -301,7 +315,7 @@ class ot_better_together {
          // Based on type, check ident1
          if (($li->flavor == PROD_TO_PROD) || ($li->flavor == PROD_TO_CAT)
          ) {
-            if ($li->ident1 != $discount_item['id']) {
+            if ($li->ident1 != (int)$discount_item['id']) {
                continue;
             }
          }
@@ -323,7 +337,7 @@ class ot_better_together {
             $match = 0;
             if (($li->flavor == PROD_TO_PROD) || ($li->flavor == CAT_TO_PROD)
             ) {
-               if ($all_items[$i]['id'] == $li->ident2) {
+               if ((int)$all_items[$i]['id'] == $li->ident2) {
                   $match = 1;
                }
             }
@@ -433,11 +447,11 @@ class ot_better_together {
          $li = $this->twoferlist[$dis];
 
          // Based on type, check ident1
-         if (($li->flavor == TWOFER_PROD) && ($li->ident1 == $discount_item['id'])
+         if (($li->flavor == TWOFER_PROD) && ($li->ident1 == (int)$discount_item['id'])
          ) {
             return true;
          }
-         else if (($li->flavor == TWOFER_CAT) && ($li->ident1 == $discount_item['category'])
+         else if (($li->flavor == TWOFER_CAT) && ($li->ident1 == (int)$discount_item['category'])
          ) {
             return true;
          }
@@ -472,7 +486,7 @@ class ot_better_together {
          reset($order->info['tax_groups']);
          $taxGroups = array_keys($order->info['tax_groups']);
          foreach ($taxGroups as $key) {
-            if ($od_amount[$key]) {
+            if (isset($od_amount[$key])) {
                $order->info['tax_groups'][$key] -= $od_amount[$key];
                if ($this->calculate_tax != 'VAT') {
                   $order->info['total'] -= $od_amount[$key];
@@ -724,14 +738,14 @@ class ot_better_together {
          $second_image = '';
          $disc_href = '';
          $name = '';
-         if (($li->flavor == PROD_TO_PROD) && ($li->ident1 == $id)
+         if (($li->flavor == PROD_TO_PROD) && ($li->ident1 == (int)$id)
          ) {
             $match = 1;
             $disc_href = '<a href="' . zen_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $li->ident2) . '">';
             $second_image = zen_get_products_image($li->ident2);
             $name = zen_get_products_name($li->ident2, $_SESSION['languages_id']);
          }
-         else if (($li->flavor == PROD_TO_CAT) && ($li->ident1 == $id)
+         else if (($li->flavor == PROD_TO_CAT) && ($li->ident1 == (int)$id)
          ) {
             $match = 1;
             $disc_href = '<a href="' . zen_href_link(FILENAME_DEFAULT, 'cPath=' . $li->ident2) . '">';
@@ -792,7 +806,7 @@ class ot_better_together {
          $bbn = false;
          $bbn_string = '';
          $disc_string = $first_image = $second_image = $first_href = $disc_href = '';
-         if (($li->flavor == TWOFER_PROD) && ($li->ident1 == $id)
+         if (($li->flavor == TWOFER_PROD) && ($li->ident1 == (int)$id)
          ) {
             $match = 1;
             if ($this->nocontext == 0) {
@@ -873,7 +887,7 @@ class ot_better_together {
          $disc_href = '';
          $second_image = '';
          $bbn_string = '';
-         if (($li->flavor == PROD_TO_PROD) && ($li->ident1 == $id)
+         if (($li->flavor == PROD_TO_PROD) && ($li->ident1 == (int)$id)
          ) {
             $match = 1;
             // Can we buy both now?
@@ -889,7 +903,7 @@ class ot_better_together {
             $second_image = zen_get_products_image($li->ident2);
 
          }
-         else if (($li->flavor == PROD_TO_CAT) && ($li->ident1 == $id)
+         else if (($li->flavor == PROD_TO_CAT) && ($li->ident1 == (int)$id)
          ) {
             $match = 1;
             $disc_link = '<a href="' . zen_href_link(FILENAME_DEFAULT, 'cPath=' . $li->ident2) . '">' . zen_get_category_name($li->ident2, $_SESSION['languages_id']) . '</a>';
@@ -1007,7 +1021,7 @@ class ot_better_together {
             continue;
          }
          $this_string = REV_GET_DISC;
-         if (($li->flavor == PROD_TO_PROD) && ($li->ident2 == $id)
+         if (($li->flavor == PROD_TO_PROD) && ($li->ident2 == (int)$id)
          ) {
             $match = 1;
             $disc_link = '<a href="' . zen_href_link(FILENAME_PRODUCT_INFO, 'products_id=' . $li->ident1) . '">' . zen_get_products_name($li->ident1, $_SESSION['languages_id']) . '</a>';
@@ -1053,7 +1067,7 @@ class ot_better_together {
                $this_string = GET_YOUR_CAT . zen_get_category_name($li->ident2, $_SESSION['languages_id']);
             }
          }
-         else if (($li->flavor == CAT_TO_PROD) && ($li->ident2 == $id)
+         else if (($li->flavor == CAT_TO_PROD) && ($li->ident2 == (int)$id)
          ) {
             $match = 1;
             $disc_link = '<a href="' . zen_href_link(FILENAME_DEFAULT, 'cPath=' . $li->ident1) . '">' . zen_get_category_name($li->ident1, $_SESSION['languages_id']) . '</a>';
@@ -1122,63 +1136,17 @@ class ot_better_together {
     */
    function setup() {
 
-       if (!IS_ADMIN_FLAG) {
-          if (file_exists(DIR_WS_MODULES . 'better_together_admin.php')) {
-             require(DIR_WS_MODULES . 'better_together_admin.php');
-          }
-       }
-
-       // $this->add_cat_to_cat(9, 9, "%", 100);
-       // $this->add_cat_to_cat(9, 5, "%", 100);
-       // $this->add_cat_to_cat(5, 5, "%", 100);
-     // $this->add_prod_to_prod(3, 3, "%", 100);
-     // $this->add_prod_to_cat(3, 14, "%", 100);
-      //$this->add_cat_to_prod(4, 3, "%", 100);
+      if (file_exists(DIR_WS_MODULES . 'better_together_admin.php')) {
+          require(DIR_WS_MODULES . 'better_together_admin.php');
+      }
 
       // Add all linkages here
       // Some examples are provided:
-      //         $this->add_cat_to_prod(4, 3, "%", 100);
-       //        $this->add_cat_to_cat(21, 14, "%", 100);
-     // $this->add_prod_to_prod(3, 180, "%", 100);
-      // $this->add_prod_to_prod(3, 27, "%", 100);
+      // $this->add_cat_to_prod(4, 3, "%", 100);
+      // $this->add_cat_to_cat(21, 14, "%", 100);
+      // $this->add_prod_to_prod(3, 180, "%", 100);
+      // $this->add_prod_to_prod(26, 26, "%", 100);
 
-      /*
-
-      $this->add_prod_to_prod(27, 3, "%", 100);
-      $this->add_prod_to_prod(27, 25, "%", 100);
-
-               $this->add_prod_to_prod(3, 83, 'X', 0);
-
-               $this->add_prod_to_prod(3, 3, "%", 100);
-               $this->add_prod_to_prod(3, 83, "%", 100);
-               $this->add_prod_to_prod(3, 27, "%", 100);
-               $this->add_cat_to_prod(4, 3, "%", 100);
-               $this->add_cat_to_prod(4, 83, "%", 100);
-               // Buy product 83, get product 53 at 50% off
-               $this->add_prod_to_prod(83, 53, "%", 50);
-
-               // Buy product 83, get one free
-               $this->add_prod_to_prod(83, 83, "%", 100);
-
-               // Buy product 83, get an item from category 14 free
-               $this->add_prod_to_cat(83, 14, "%", 100);
-
-               // Buy an item from category 21, get an item from category 14 free
-               $this->add_cat_to_cat(21, 14, "%", 100);
-
-               // Buy item 12, get a second one free.
-               $this->add_twoforone_prod(12);
-
-               // Buy any item from category 10, get a second identical one free
-               $this->add_twoforone_cat(10);
-
-               // $this->add_twoforone_prod(17);
-               $this->add_prod_to_prod(26, 27, "%", 100);
-               $this->add_prod_to_prod(83, 15, "%", 50);
-               $this->add_prod_to_prod(83, 20, "%", 25);
-               $this->add_cat_to_cat(14, 14, "%", 100);
-               $this->add_prod_to_prod(3, 25, "%", 50);
-      */
    }
 
 }
